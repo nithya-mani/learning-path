@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Path Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal-50:#E1F5EE;--teal-100:#9FE1CB;--teal-200:#5DCAA5;--teal-400:#1D9E75;--teal-600:#0F6E56;--teal-800:#085041;
+  --green-50:#EAF3DE;--green-100:#C0DD97;--green-400:#639922;--green-600:#3B6D11;
+  --purple-50:#EEEDFE;--purple-200:#AFA9EC;--purple-400:#7F77DD;--purple-600:#534AB7;
+  --amber-50:#FAEEDA;--amber-400:#BA7517;--amber-600:#854F0B;
+  --bg:#FFFFFF;--bg2:#F7FAF8;--bg3:#EEF5F1;
+  --text1:#0F1F18;--text2:#2E4D3E;--text3:#5E8070;
+  --border:#CBE3D5;--shadow:0 2px 8px rgba(15,110,86,0.07);
+  --r:10px;--rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'DM Sans',sans-serif;background:var(--bg2);color:var(--text1);font-size:14px;line-height:1.5;min-height:100vh}
+
+/* ─── SETUP WIZARD ──────────────────────────────────────────── */
+#setup-screen{position:fixed;inset:0;background:linear-gradient(145deg,#0F6E56 0%,#1D9E75 45%,#3B6D11 100%);display:flex;align-items:center;justify-content:center;z-index:9000;padding:20px}
+#setup-screen.hidden{display:none}
+.wizard{background:#fff;border-radius:24px;width:100%;max-width:620px;overflow:hidden;box-shadow:0 32px 80px rgba(0,0,0,0.25)}
+.wizard-hero{background:linear-gradient(135deg,#0F6E56,#1D9E75);padding:36px 40px 28px;color:#fff}
+.wizard-badge{font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;opacity:0.75;margin-bottom:10px}
+.wizard-title{font-family:'DM Serif Display',serif;font-size:28px;line-height:1.2;margin-bottom:6px}
+.wizard-sub{font-size:13px;opacity:0.75}
+.wizard-steps{display:flex;gap:0;border-bottom:1px solid #E5EDE9;padding:0 32px}
+.wizard-step-tab{padding:14px 16px;font-size:12px;font-weight:600;color:#9CC4B2;border-bottom:2px solid transparent;cursor:default;transition:all 0.2s;white-space:nowrap}
+.wizard-step-tab.active{color:var(--teal-600);border-bottom-color:var(--teal-400)}
+.wizard-step-tab.done{color:var(--teal-400)}
+.wizard-body{padding:28px 32px}
+.wz-step{display:none}.wz-step.active{display:block}
+.wz-label{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:5px;display:block}
+.wz-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-size:14px;font-family:'DM Sans',sans-serif;color:var(--text1);background:#fff;outline:none;transition:border 0.15s}
+.wz-input:focus{border-color:var(--teal-400);box-shadow:0 0 0 3px rgba(29,158,117,0.12)}
+.wz-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.wz-full{grid-column:1/-1}
+.wz-row{margin-bottom:16px}
+.wz-nav{display:flex;justify-content:space-between;align-items:center;margin-top:24px;padding-top:20px;border-top:1px solid var(--border)}
+.btn-wz-back{background:none;border:1.5px solid var(--border);border-radius:8px;padding:10px 20px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);font-family:'DM Sans',sans-serif}
+.btn-wz-back:hover{background:var(--bg3)}
+.btn-wz-next{background:var(--teal-600);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;display:flex;align-items:center;gap:6px}
+.btn-wz-next:hover{background:var(--teal-800)}
+.wz-hint{font-size:12px;color:var(--text3);margin-top:4px}
+.wz-course-list{max-height:240px;overflow-y:auto;border:1.5px solid var(--border);border-radius:8px;margin-bottom:12px}
+.wz-course-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px}
+.wz-course-item:last-child{border-bottom:none}
+.wz-course-item span{flex:1;color:var(--text1)}
+.wz-course-item small{color:var(--text3);white-space:nowrap}
+.wz-course-item button{background:none;border:none;cursor:pointer;color:#DC2626;font-size:16px;padding:0 4px;line-height:1}
+.wz-empty-courses{text-align:center;padding:32px;color:var(--text3);font-size:13px}
+.btn-add-wz{background:var(--teal-50);border:1.5px dashed var(--teal-200);border-radius:8px;padding:10px;width:100%;font-size:13px;font-weight:600;color:var(--teal-600);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s}
+.btn-add-wz:hover{background:var(--teal-100)}
+.mini-form{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:16px;margin-top:10px;display:none}
+.mini-form.open{display:block}
+.mini-grid{display:grid;grid-template-columns:1fr 1fr 80px;gap:10px;margin-bottom:10px}
+.wz-step3-summary{background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:18px;margin-bottom:16px}
+.summary-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.summary-row:last-child{border-bottom:none}
+.summary-key{color:var(--text3)}
+.summary-val{font-weight:600;color:var(--text1)}
+.wz-step-indicator{display:flex;gap:6px;align-items:center}
+.wz-dot{width:8px;height:8px;border-radius:50%;background:var(--border);transition:background 0.2s}
+.wz-dot.active{background:var(--teal-400)}
+.wz-dot.done{background:var(--teal-200)}
+.wz-error{color:#DC2626;font-size:12px;margin-top:6px;display:none}
+.cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.cat-chip{padding:5px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:#fff;color:var(--text2);transition:all 0.12s}
+.cat-chip.selected{background:var(--teal-50);border-color:var(--teal-200);color:var(--teal-600)}
+
+/* ─── APP SHELL ─────────────────────────────────────────────── */
+#app{display:none}
+#app.visible{display:block}
+.app{max-width:1260px;margin:0 auto;padding:24px 20px}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,var(--teal-600) 0%,var(--teal-400) 55%,var(--green-400) 100%);border-radius:var(--rl);padding:26px 32px;margin-bottom:22px;color:#fff;position:relative;overflow:hidden}
+.header::before{content:'';position:absolute;right:-30px;top:-30px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.06);pointer-events:none}
+.hdr-top{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.hdr-name{font-size:11px;font-weight:600;letter-spacing:1.3px;text-transform:uppercase;opacity:0.75;margin-bottom:4px}
+.hdr-title{font-family:'DM Serif Display',serif;font-size:24px;line-height:1.2;margin-bottom:4px}
+.hdr-sub{font-size:12px;opacity:0.7}
+.hdr-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn-hdr{background:rgba(255,255,255,0.18);color:#fff;border:1px solid rgba(255,255,255,0.35);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s;display:flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-hdr:hover{background:rgba(255,255,255,0.28)}
+.btn-hdr.accent{background:#fff;color:var(--teal-600)}
+.btn-hdr.accent:hover{background:rgba(255,255,255,0.9)}
+.progress-card{background:rgba(255,255,255,0.15);border-radius:var(--r);padding:14px 18px;min-width:180px;text-align:center;backdrop-filter:blur(4px)}
+.prog-pct{font-size:34px;font-weight:700;line-height:1;font-family:'DM Serif Display',serif}
+.prog-label{font-size:10px;opacity:0.75;margin-top:3px;text-transform:uppercase;letter-spacing:0.9px}
+.prog-bar-outer{height:5px;background:rgba(255,255,255,0.2);border-radius:3px;margin-top:9px}
+.prog-bar-inner{height:5px;background:#fff;border-radius:3px;transition:width 0.5s ease}
+
+/* KPI CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:22px}
+.kpi{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--shadow)}
+.kpi-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.9px;margin-bottom:7px}
+.kpi-value{font-size:26px;font-weight:700;color:var(--teal-600);line-height:1;font-family:'DM Serif Display',serif}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.kpi-bar{height:3px;background:var(--border);border-radius:2px;margin-top:9px}
+.kpi-bar-fill{height:3px;border-radius:2px;transition:width 0.5s;background:var(--teal-400)}
+.kpi.purple{border-color:var(--purple-200);background:var(--purple-50)}.kpi.purple .kpi-value{color:var(--purple-600)}.kpi.purple .kpi-bar-fill{background:var(--purple-400)}
+.kpi.green{border-color:var(--green-100);background:var(--green-50)}.kpi.green .kpi-value{color:var(--green-600)}.kpi.green .kpi-bar-fill{background:var(--green-400)}
+.kpi.amber{border-color:#FAC775;background:var(--amber-50)}.kpi.amber .kpi-value{color:var(--amber-600)}.kpi.amber .kpi-bar-fill{background:var(--amber-400)}
+
+/* LAYOUT */
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+@media(max-width:920px){.main-grid{grid-template-columns:1fr}}
+
+/* PANEL */
+.panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);box-shadow:var(--shadow);overflow:hidden}
+.panel-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.panel-title{font-size:13px;font-weight:700;color:var(--text1)}
+.panel-body{padding:16px 18px}
+
+/* FILTERS */
+.filters{display:flex;gap:8px;flex-wrap:wrap;padding:12px 18px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.fl{display:flex;align-items:center;gap:5px}
+.fl-lbl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;white-space:nowrap}
+select,input[type=text]{border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--text1);background:var(--bg);outline:none;font-family:'DM Sans',sans-serif}
+select:focus,input[type=text]:focus{border-color:var(--teal-400);box-shadow:0 0 0 2px rgba(29,158,117,0.12)}
+input[type=text]{width:180px}
+.badge-count{background:var(--teal-50);color:var(--teal-600);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid var(--teal-100)}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;max-height:520px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{position:sticky;top:0;background:var(--bg3);padding:9px 11px;text-align:left;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;border-bottom:1px solid var(--border);white-space:nowrap;z-index:2}
+td{padding:8px 11px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg2)}
+tr.completed td{opacity:0.55}
+tr.completed .course-title{text-decoration:line-through;color:var(--text3)}
+tr.p-agentic td:first-child{border-left:3px solid var(--purple-400)}
+tr.p-gwi td:first-child{border-left:3px solid var(--teal-400)}
+.course-title{font-weight:500;color:var(--text1);line-height:1.3}
+.course-title a{color:inherit;text-decoration:none}
+.course-title a:hover{color:var(--teal-400)}
+.cat-badge{display:inline-block;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px;white-space:nowrap;margin-top:2px}
+.c-ag{background:var(--purple-50);color:var(--purple-600);border:1px solid var(--purple-200)}
+.c-gwi{background:var(--teal-50);color:var(--teal-600);border:1px solid var(--teal-100)}
+.c-tools{background:var(--amber-50);color:var(--amber-600);border:1px solid #FAC775}
+.c-def{background:var(--bg3);color:var(--text2);border:1px solid var(--border)}
+input[type=checkbox]{width:15px;height:15px;accent-color:var(--teal-400);cursor:pointer}
+input[type=date]{border:1px solid var(--border);border-radius:5px;padding:3px 5px;font-size:10px;color:var(--text2);background:var(--bg);width:104px;font-family:'DM Sans',sans-serif}
+.li-btn{background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;font-size:10px;cursor:pointer;color:var(--text3);font-family:'DM Sans',sans-serif;transition:all 0.12s;white-space:nowrap}
+.li-btn.on{background:#0077B5;border-color:#0077B5;color:#fff}
+.hrs-cell{font-weight:600;color:var(--teal-600);white-space:nowrap}
+.empty-row td{text-align:center;padding:28px;color:var(--text3)}
+th:nth-child(1){width:28px}th:nth-child(2){width:36%}th:nth-child(3){width:54px}th:nth-child(4){width:30px}
+th:nth-child(5){width:70px}th:nth-child(6){width:106px}th:nth-child(7){width:56px}th:nth-child(8){width:54px}
+
+/* ACTION BUTTONS */
+.btn-add{background:var(--teal-600);color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px;transition:background 0.15s}
+.btn-add:hover{background:var(--teal-800)}
+.btn-icon{background:none;border:none;cursor:pointer;padding:2px 5px;border-radius:4px;font-size:12px;transition:background 0.1s}
+.btn-icon:hover{background:var(--bg3)}
+.btn-del:hover{background:#FEE2E2;color:#B91C1C}
+
+/* EXPORT */
+.export-wrap{padding:14px 18px;border-top:1px solid var(--border);background:var(--bg2)}
+.btn-export{background:var(--teal-600);color:#fff;border:none;border-radius:7px;padding:9px 16px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:6px;transition:background 0.15s}
+.btn-export:hover{background:var(--teal-800)}
+.export-out{margin-top:10px;display:none}
+.export-out textarea{width:100%;height:130px;font-family:monospace;font-size:10px;border:1px solid var(--border);border-radius:6px;padding:8px;color:var(--text1);background:var(--bg);resize:none}
+.btn-copy{margin-top:5px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;color:var(--teal-600);font-weight:700;font-family:'DM Sans',sans-serif}
+.btn-copy:hover{background:var(--teal-50)}
+
+/* CHART PANEL */
+.chart-tabs{display:flex;gap:4px;padding:10px 18px 0;border-bottom:1px solid var(--border)}
+.ctab{background:none;border:none;padding:6px 10px;font-size:11px;font-weight:700;color:var(--text3);cursor:pointer;border-radius:6px 6px 0 0;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:'DM Sans',sans-serif}
+.ctab.active{color:var(--teal-600);border-bottom-color:var(--teal-400);background:var(--teal-50)}
+.chart-wrap{padding:14px 16px;height:300px;position:relative}
+
+/* SIDEBAR */
+.streak-card{background:linear-gradient(135deg,var(--teal-50),var(--green-50));border:1px solid var(--teal-100);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.sc-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:9px}
+.sc-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.sc-key{font-size:12px;color:var(--text2)}
+.sc-val{font-size:12px;font-weight:700;color:var(--teal-600)}
+.wk-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-top:8px}
+.wk-cell{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:5px 3px;text-align:center}
+.wk-cell.done{background:var(--teal-50);border-color:var(--teal-100)}
+.wk-cell.partial{background:var(--amber-50);border-color:#FAC775}
+.wk-num{font-size:9px;font-weight:700;color:var(--text3)}
+.wk-count{font-size:11px;font-weight:700;color:var(--teal-600)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;margin:2px 2px 2px 0}
+.pill-agt{background:var(--purple-50);color:var(--purple-600);border:1px solid var(--purple-200)}
+.pill-gwi{background:var(--teal-50);color:var(--teal-600);border:1px solid var(--teal-100)}
+.dot{width:6px;height:6px;border-radius:50%;display:inline-block;flex-shrink:0}
+.dot-p{background:var(--purple-400)}.dot-t{background:var(--teal-400)}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:5000;align-items:center;justify-content:center;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:#fff;border-radius:var(--rl);padding:26px 28px 22px;width:100%;max-width:520px;position:relative;max-height:88vh;overflow-y:auto;box-shadow:0 16px 60px rgba(0,0,0,0.15)}
+.modal-title{font-size:15px;font-weight:700;color:var(--text1);margin-bottom:16px}
+.modal-x{position:absolute;top:14px;right:16px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--text3);line-height:1}
+.modal-x:hover{color:var(--text1)}
+.mg{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+.mg-full{grid-column:1/-1}
+.ml{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:3px;display:block}
+.mi{width:100%;border:1.5px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text1);background:#fff;outline:none}
+.mi:focus{border-color:var(--teal-400);box-shadow:0 0 0 2px rgba(29,158,117,0.12)}
+.m-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:1px solid var(--border)}
+.btn-mc{background:#fff;border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;color:var(--text2);font-weight:600}
+.btn-ms{background:var(--teal-600);color:#fff;border:none;border-radius:7px;padding:7px 18px;font-size:12px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif}
+.btn-ms:hover{background:var(--teal-800)}
+.m-err{color:#DC2626;font-size:11px;margin-top:8px;display:none}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--teal-600);color:#fff;padding:9px 16px;border-radius:8px;font-size:12px;font-weight:600;z-index:9999;opacity:0;transform:translateY(8px);transition:all 0.22s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* GITHUB GUIDE */
+.gh-guide{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-top:14px}
+.gh-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.gh-step{display:flex;gap:9px;margin-bottom:7px;font-size:11px;color:var(--text2);line-height:1.5}
+.gh-num{width:18px;height:18px;border-radius:50%;background:var(--teal-600);color:#fff;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.gh-code{font-family:monospace;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px}
+</style>
+</head>
+<body>
+
+<!-- ═══ SETUP WIZARD ══════════════════════════════════════════════ -->
+<div id="setup-screen">
+<div class="wizard">
+  <div class="wizard-hero">
+    <div class="wizard-badge">Learning Path Dashboard</div>
+    <div class="wizard-title">Build your personal<br>learning tracker</div>
+    <div class="wizard-sub">Set up once, track your progress, share with the world.</div>
+  </div>
+  <div class="wizard-steps" id="wz-tabs">
+    <div class="wizard-step-tab active" data-step="0">1 · About You</div>
+    <div class="wizard-step-tab" data-step="1">2 · Your Goal</div>
+    <div class="wizard-step-tab" data-step="2">3 · Add Courses</div>
+    <div class="wizard-step-tab" data-step="3">4 · Confirm</div>
+  </div>
+  <div class="wizard-body">
+
+    <!-- Step 0: About You -->
+    <div class="wz-step active" id="wz-0">
+      <div class="wz-grid">
+        <div class="wz-row wz-full">
+          <label class="wz-label">Your full name *</label>
+          <input class="wz-input" id="wz-name" type="text" placeholder="e.g. Nithyalakshmi Mani" autocomplete="name">
+        </div>
+        <div class="wz-row wz-full">
+          <label class="wz-label">Dashboard tagline <span style="font-weight:400;text-transform:none">(optional)</span></label>
+          <input class="wz-input" id="wz-tagline" type="text" placeholder="e.g. Marketing Leader · AI Specialist · 2026">
+          <div class="wz-hint">Appears in the header subtitle.</div>
+        </div>
+      </div>
+      <div class="m-err" id="err-0">Please enter your name.</div>
+      <div class="wz-nav">
+        <div class="wz-step-indicator"><div class="wz-dot active"></div><div class="wz-dot"></div><div class="wz-dot"></div><div class="wz-dot"></div></div>
+        <button class="btn-wz-next" onclick="wzNext(0)">Next → Goal</button>
+      </div>
+    </div>
+
+    <!-- Step 1: Your Goal -->
+    <div class="wz-step" id="wz-1">
+      <div class="wz-grid">
+        <div class="wz-row">
+          <label class="wz-label">Start date *</label>
+          <input class="wz-input" id="wz-start" type="date">
+        </div>
+        <div class="wz-row">
+          <label class="wz-label">End date *</label>
+          <input class="wz-input" id="wz-end" type="date">
+        </div>
+        <div class="wz-row wz-full">
+          <label class="wz-label">Total target study hours *</label>
+          <input class="wz-input" id="wz-hrs" type="number" min="1" max="2000" step="0.5" placeholder="e.g. 384.25">
+          <div class="wz-hint">This is your overall hours goal shown in the dashboard header.</div>
+        </div>
+        <div class="wz-row wz-full">
+          <label class="wz-label">Priority tracks to highlight <span style="font-weight:400;text-transform:none">(pick any)</span></label>
+          <div class="wz-hint" style="margin-bottom:8px">Selected tracks get coloured left borders and featured KPI cards.</div>
+          <div class="cat-chips" id="priority-chips"></div>
+        </div>
+      </div>
+      <div class="m-err" id="err-1">Please fill in start date, end date and target hours.</div>
+      <div class="wz-nav">
+        <button class="btn-wz-back" onclick="wzBack(1)">← Back</button>
+        <div class="wz-step-indicator"><div class="wz-dot done"></div><div class="wz-dot active"></div><div class="wz-dot"></div><div class="wz-dot"></div></div>
+        <button class="btn-wz-next" onclick="wzNext(1)">Next → Courses</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Add Courses -->
+    <div class="wz-step" id="wz-2">
+      <div style="font-size:12px;color:var(--text3);margin-bottom:10px">Add your courses one by one. You can also add more after setup.</div>
+      <div class="wz-course-list" id="wz-course-list"></div>
+      <button class="btn-add-wz" onclick="toggleMiniForm()">+ Add a course</button>
+      <div class="mini-form" id="mini-form">
+        <div class="mini-grid">
+          <input class="wz-input" id="mf-title" type="text" placeholder="Course title *" style="grid-column:1/-1">
+          <select class="wz-input" id="mf-cat">
+            <option value="">Category *</option>
+            <option>AI & Claude</option><option>Agentic AI</option><option>AI Tools — Hands-On Practice</option>
+            <option>Audience Intelligence & GWI</option><option>B2B & ABM</option><option>EARNED — Content & PR</option>
+            <option>EARNED — SEO & GEO/AIO</option><option>Ecommerce & Social Commerce</option><option>Excel & PowerPoint</option>
+            <option>FMCG / Brand</option><option>FinTech / VISA</option><option>Framework Building</option>
+            <option>Leadership & Executive</option><option>Luxury & LVMH</option><option>MarTech</option>
+            <option>OWNED — Analytics & Data</option><option>OWNED — CRM & Automation</option><option>PAID — Programmatic</option>
+            <option>PAID — Search & PPC</option><option>PAID — Social Advertising</option><option>Pharma / HCP</option>
+            <option>Python & Data Tools</option><option>SHARED — Social Platforms</option><option>Other</option>
+          </select>
+          <select class="wz-input" id="mf-week">
+            <option value="">Week *</option>
+            <option>Week 1</option><option>Week 2</option><option>Week 3</option><option>Week 4</option><option>Week 5</option>
+            <option>Week 6</option><option>Week 7</option><option>Week 8</option><option>Week 9</option><option>Week 10</option>
+          </select>
+          <input class="wz-input" id="mf-hrs" type="number" min="0.5" step="0.5" placeholder="Hours *">
+          <input class="wz-input" id="mf-url" type="url" placeholder="URL (optional)" style="grid-column:1/-1">
+          <input class="wz-input" id="mf-platform" type="text" placeholder="Platform (optional)" style="grid-column:1/2">
+          <input class="wz-input" id="mf-cert" type="text" placeholder="Cert / notes (optional)" style="grid-column:2/4">
+        </div>
+        <div style="display:flex;gap:8px;justify-content:flex-end">
+          <button class="btn-wz-back" onclick="toggleMiniForm()">Cancel</button>
+          <button class="btn-wz-next" onclick="addWzCourse()">Add Course</button>
+        </div>
+        <div class="m-err" id="err-mf">Please fill in title, category, week and hours.</div>
+      </div>
+      <div class="wz-nav">
+        <button class="btn-wz-back" onclick="wzBack(2)">← Back</button>
+        <div class="wz-step-indicator"><div class="wz-dot done"></div><div class="wz-dot done"></div><div class="wz-dot active"></div><div class="wz-dot"></div></div>
+        <button class="btn-wz-next" onclick="wzNext(2)" id="btn-to-confirm">Review & Launch →</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Confirm -->
+    <div class="wz-step" id="wz-3">
+      <div style="font-size:13px;font-weight:600;color:var(--text1);margin-bottom:12px">Everything looks good?</div>
+      <div class="wz-step3-summary" id="wz-summary"></div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:4px">You can add, edit and delete courses at any time from within the dashboard. Your data is saved in your browser.</div>
+      <div class="wz-nav">
+        <button class="btn-wz-back" onclick="wzBack(3)">← Edit</button>
+        <div class="wz-step-indicator"><div class="wz-dot done"></div><div class="wz-dot done"></div><div class="wz-dot done"></div><div class="wz-dot active"></div></div>
+        <button class="btn-wz-next" onclick="launchDashboard()" style="background:var(--green-600);font-size:14px;padding:12px 24px">Launch My Dashboard ✓</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ═══ DASHBOARD APP ══════════════════════════════════════════════ -->
+<div id="app">
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="hdr-top">
+      <div style="flex:1;min-width:0">
+        <div class="hdr-name" id="hdr-name">Your Name</div>
+        <div class="hdr-title" id="hdr-title">Learning Path Dashboard</div>
+        <div class="hdr-sub" id="hdr-sub">Apr 02 – Jun 08 · 0 Courses · All Free</div>
+      </div>
+      <div class="hdr-actions">
+        <button class="btn-hdr" onclick="exportPersonalisedCopy()" title="Download your personalised HTML copy">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 13h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download My Version
+        </button>
+        <button class="btn-hdr" onclick="resetToWizard()" title="Reset and start over">⚙ Edit Setup</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:14px;flex-wrap:wrap">
+      <div class="progress-card">
+        <div class="prog-pct" id="hdr-pct">0%</div>
+        <div class="prog-label">Overall Progress</div>
+        <div class="prog-bar-outer"><div class="prog-bar-inner" id="hdr-bar" style="width:0%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- TABLE PANEL -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Course Tracker</span>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span class="badge-count" id="showing-count">0 courses</span>
+          <button class="btn-add" onclick="openCourseModal()">+ Add Course</button>
+        </div>
+      </div>
+      <div class="filters">
+        <div class="fl"><span class="fl-lbl">Week</span>
+          <select id="f-week"><option value="">All Weeks</option></select>
+        </div>
+        <div class="fl"><span class="fl-lbl">Category</span>
+          <select id="f-cat"><option value="">All Categories</option></select>
+        </div>
+        <div class="fl"><span class="fl-lbl">Status</span>
+          <select id="f-status"><option value="">All</option><option value="todo">To Do</option><option value="done">Completed</option></select>
+        </div>
+        <div class="fl"><input type="text" id="f-search" placeholder="Search courses…"></div>
+      </div>
+      <div class="tbl-wrap">
+        <table><thead><tr>
+          <th>#</th><th>Course</th><th>Hrs</th><th>✓</th>
+          <th>LinkedIn</th><th>Completed</th><th>Week</th><th>Edit</th>
+        </tr></thead>
+        <tbody id="course-tbody"></tbody></table>
+      </div>
+      <div class="export-wrap">
+        <button class="btn-export" onclick="exportCSV()">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 13h12" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export Completed (CSV)
+        </button>
+        <div class="export-out" id="export-out">
+          <textarea id="export-txt" readonly></textarea>
+          <button class="btn-copy" onclick="copyCSV()">Copy to clipboard</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- Chart -->
+      <div class="panel">
+        <div class="chart-tabs">
+          <button class="ctab active" onclick="switchChart('cat',this)">By Category</button>
+          <button class="ctab" onclick="switchChart('week',this)">By Week</button>
+        </div>
+        <div class="chart-wrap"><canvas id="main-chart"></canvas></div>
+      </div>
+
+      <!-- Priority tracks -->
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Priority Tracks</span></div>
+        <div class="panel-body" id="priority-display" style="padding-top:10px"></div>
+      </div>
+
+      <!-- Session summary -->
+      <div class="streak-card">
+        <div class="sc-title">Session Summary</div>
+        <div class="sc-row"><span class="sc-key">Total courses</span><span class="sc-val" id="ss-total">0</span></div>
+        <div class="sc-row"><span class="sc-key">Total hours goal</span><span class="sc-val" id="ss-hrs-goal">0</span></div>
+        <div class="sc-row"><span class="sc-key">Journey end</span><span class="sc-val" id="ss-end">—</span></div>
+        <div style="border-top:1px solid var(--teal-100);margin-top:6px;padding-top:7px">
+          <div class="sc-row"><span class="sc-key">Completed</span><span class="sc-val" id="ss-done">0</span></div>
+          <div class="sc-row"><span class="sc-key">Hours earned</span><span class="sc-val" id="ss-earned">0h</span></div>
+        </div>
+        <div class="sc-title" style="margin-top:14px">Week-by-Week</div>
+        <div class="wk-grid" id="wk-grid"></div>
+      </div>
+
+      <!-- GitHub guide -->
+      <div class="gh-guide">
+        <div class="gh-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22" stroke="var(--text3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Share on GitHub Pages
+        </div>
+        <div class="gh-step"><div class="gh-num">1</div><div>Click <strong>Download My Version</strong> above — saves <span class="gh-code">index.html</span></div></div>
+        <div class="gh-step"><div class="gh-num">2</div><div>Go to <strong>github.com</strong> → New repository → name it <span class="gh-code">learning-path</span>, set Public</div></div>
+        <div class="gh-step"><div class="gh-num">3</div><div>Upload <span class="gh-code">index.html</span> to the repo root</div></div>
+        <div class="gh-step"><div class="gh-num">4</div><div>Settings → Pages → Source: <span class="gh-code">main</span> branch → Save</div></div>
+        <div class="gh-step"><div class="gh-num">5</div><div>Your live URL: <span class="gh-code">username.github.io/learning-path</span> — share on LinkedIn!</div></div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- COURSE MODAL -->
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeCourseModal()">
+  <div class="modal">
+    <button class="modal-x" onclick="closeCourseModal()">&#x2715;</button>
+    <div class="modal-title" id="modal-title">Add New Course</div>
+    <div class="mg">
+      <div class="mg-full"><label class="ml">Course Title *</label><input class="mi" id="mi-title" type="text" placeholder="e.g. Coursera — Machine Learning Specialization"></div>
+      <div><label class="ml">Category *</label>
+        <select class="mi" id="mi-cat">
+          <option value="">Select…</option>
+          <option>AI & Claude</option><option>Agentic AI</option><option>AI Tools — Hands-On Practice</option>
+          <option>Audience Intelligence & GWI</option><option>B2B & ABM</option><option>EARNED — Content & PR</option>
+          <option>EARNED — SEO & GEO/AIO</option><option>Ecommerce & Social Commerce</option><option>Excel & PowerPoint</option>
+          <option>FMCG / Brand</option><option>FinTech / VISA</option><option>Framework Building</option>
+          <option>Leadership & Executive</option><option>Luxury & LVMH</option><option>MarTech</option>
+          <option>OWNED — Analytics & Data</option><option>OWNED — CRM & Automation</option><option>PAID — Programmatic</option>
+          <option>PAID — Search & PPC</option><option>PAID — Social Advertising</option><option>Pharma / HCP</option>
+          <option>Python & Data Tools</option><option>SHARED — Social Platforms</option><option>Other</option>
+        </select>
+      </div>
+      <div><label class="ml">Week *</label>
+        <select class="mi" id="mi-week">
+          <option value="">Select…</option>
+          <option>Week 1</option><option>Week 2</option><option>Week 3</option><option>Week 4</option><option>Week 5</option>
+          <option>Week 6</option><option>Week 7</option><option>Week 8</option><option>Week 9</option><option>Week 10</option>
+        </select>
+      </div>
+      <div><label class="ml">Platform</label><input class="mi" id="mi-platform" type="text" placeholder="e.g. Coursera"></div>
+      <div><label class="ml">Hours *</label><input class="mi" id="mi-hrs" type="number" min="0.5" step="0.5" placeholder="e.g. 3"></div>
+      <div class="mg-full"><label class="ml">URL</label><input class="mi" id="mi-url" type="url" placeholder="https://…"></div>
+      <div class="mg-full"><label class="ml">Certificate / Notes</label><input class="mi" id="mi-cert" type="text" placeholder="e.g. LinkedIn Cert + Badge"></div>
+    </div>
+    <div class="m-err" id="modal-err">Please fill in Title, Category, Week and Hours.</div>
+    <div class="m-actions">
+      <button class="btn-mc" onclick="closeCourseModal()">Cancel</button>
+      <button class="btn-ms" id="modal-save-btn" onclick="saveCourse()">Save Course</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let cfg = {name:'',tagline:'',startDate:'',endDate:'',targetHrs:0,priorities:[]};
+let courses = [];  // {num,title,category,week,platform,hrs,url,cert,notes,done,linkedin,completedDate}
+let chartInst = null, chartMode = 'cat', editingNum = null;
+let wzCourses = [];  // temp during wizard
+
+const CATS = ['AI & Claude','Agentic AI','AI Tools — Hands-On Practice','Audience Intelligence & GWI','B2B & ABM','EARNED — Content & PR','EARNED — SEO & GEO/AIO','Ecommerce & Social Commerce','Excel & PowerPoint','FMCG / Brand','FinTech / VISA','Framework Building','Leadership & Executive','Luxury & LVMH','MarTech','OWNED — Analytics & Data','OWNED — CRM & Automation','PAID — Programmatic','PAID — Search & PPC','PAID — Social Advertising','Pharma / HCP','Python & Data Tools','SHARED — Social Platforms','Other'];
+
+// ─── WIZARD ──────────────────────────────────────────────────────────────────
+function initWizard() {
+  // priority chips
+  const pc = document.getElementById('priority-chips');
+  pc.innerHTML = CATS.map(c => `<div class="cat-chip" onclick="toggleChip(this,'${c.replace(/'/g,"\\'")}')"> ${c}</div>`).join('');
+  renderWzCourseList();
+}
+
+function toggleChip(el, cat) {
+  el.classList.toggle('selected');
+  const i = cfg.priorities.indexOf(cat);
+  if (i >= 0) cfg.priorities.splice(i,1); else cfg.priorities.push(cat);
+}
+
+function wzNext(step) {
+  const errEl = document.getElementById('err-'+step);
+  if (step === 0) {
+    const name = document.getElementById('wz-name').value.trim();
+    if (!name) { errEl.style.display='block'; return; }
+    errEl.style.display='none';
+    cfg.name = name;
+    cfg.tagline = document.getElementById('wz-tagline').value.trim();
+  }
+  if (step === 1) {
+    const s = document.getElementById('wz-start').value;
+    const e = document.getElementById('wz-end').value;
+    const h = parseFloat(document.getElementById('wz-hrs').value);
+    if (!s||!e||isNaN(h)||h<=0) { errEl.style.display='block'; return; }
+    if (new Date(e) <= new Date(s)) { errEl.textContent='End date must be after start date.'; errEl.style.display='block'; return; }
+    errEl.style.display='none';
+    cfg.startDate=s; cfg.endDate=e; cfg.targetHrs=h;
+  }
+  if (step === 2) {
+    buildWzSummary();
+  }
+  goToStep(step+1);
+}
+
+function wzBack(step) { goToStep(step-1); }
+
+function goToStep(n) {
+  document.querySelectorAll('.wz-step').forEach((el,i) => {
+    el.classList.toggle('active', i===n);
+  });
+  document.querySelectorAll('.wizard-step-tab').forEach((el,i) => {
+    el.classList.remove('active','done');
+    if (i===n) el.classList.add('active');
+    else if (i<n) el.classList.add('done');
+  });
+}
+
+function toggleMiniForm() {
+  const mf = document.getElementById('mini-form');
+  mf.classList.toggle('open');
+  if (mf.classList.contains('open')) {
+    ['mf-title','mf-url','mf-platform','mf-cert'].forEach(id => document.getElementById(id).value='');
+    document.getElementById('mf-cat').value='';
+    document.getElementById('mf-week').value='';
+    document.getElementById('mf-hrs').value='';
+    document.getElementById('err-mf').style.display='none';
+  }
+}
+
+function addWzCourse() {
+  const title = document.getElementById('mf-title').value.trim();
+  const cat = document.getElementById('mf-cat').value;
+  const week = document.getElementById('mf-week').value;
+  const hrs = parseFloat(document.getElementById('mf-hrs').value);
+  const err = document.getElementById('err-mf');
+  if (!title||!cat||!week||isNaN(hrs)||hrs<=0) { err.style.display='block'; return; }
+  err.style.display='none';
+  wzCourses.push({
+    num: wzCourses.length+1, title, category:cat, week, hrs,
+    platform: document.getElementById('mf-platform').value.trim(),
+    url: document.getElementById('mf-url').value.trim(),
+    cert: document.getElementById('mf-cert').value.trim(),
+    notes:'', done:false, linkedin:false, completedDate:''
+  });
+  toggleMiniForm();
+  renderWzCourseList();
+}
+
+function removeWzCourse(idx) {
+  wzCourses.splice(idx,1);
+  wzCourses.forEach((c,i) => c.num=i+1);
+  renderWzCourseList();
+}
+
+function renderWzCourseList() {
+  const el = document.getElementById('wz-course-list');
+  if (wzCourses.length===0) {
+    el.innerHTML='<div class="wz-empty-courses">No courses yet — add your first one below.</div>';
+  } else {
+    el.innerHTML = wzCourses.map((c,i) =>
+      `<div class="wz-course-item">
+        <span>${c.num}. ${c.title}</span>
+        <small>${c.week} · ${c.hrs}h</small>
+        <button onclick="removeWzCourse(${i})" title="Remove">×</button>
+      </div>`
+    ).join('');
+  }
+}
+
+function buildWzSummary() {
+  const totalHrs = wzCourses.reduce((s,c)=>s+c.hrs,0);
+  const fmt = d => d ? new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  document.getElementById('wz-summary').innerHTML = `
+    <div class="summary-row"><span class="summary-key">Name</span><span class="summary-val">${cfg.name}</span></div>
+    ${cfg.tagline ? `<div class="summary-row"><span class="summary-key">Tagline</span><span class="summary-val">${cfg.tagline}</span></div>` : ''}
+    <div class="summary-row"><span class="summary-key">Journey</span><span class="summary-val">${fmt(cfg.startDate)} → ${fmt(cfg.endDate)}</span></div>
+    <div class="summary-row"><span class="summary-key">Target hours</span><span class="summary-val">${cfg.targetHrs} hrs</span></div>
+    <div class="summary-row"><span class="summary-key">Courses added</span><span class="summary-val">${wzCourses.length} courses · ${totalHrs.toFixed(1)} hrs</span></div>
+    <div class="summary-row"><span class="summary-key">Priority tracks</span><span class="summary-val">${cfg.priorities.length ? cfg.priorities.join(', ') : 'None selected'}</span></div>
+  `;
+}
+
+function launchDashboard() {
+  courses = wzCourses.map(c => ({...c}));
+  saveState();
+  renderDashboard();
+  document.getElementById('setup-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+}
+
+// ─── LOAD / SAVE ─────────────────────────────────────────────────────────────
+function saveState() {
+  try {
+    localStorage.setItem('lp_cfg', JSON.stringify(cfg));
+    localStorage.setItem('lp_courses', JSON.stringify(courses));
+  } catch(e) {}
+}
+
+function loadState() {
+  try {
+    const c = localStorage.getItem('lp_cfg');
+    const cs = localStorage.getItem('lp_courses');
+    if (c && cs) {
+      cfg = JSON.parse(c);
+      courses = JSON.parse(cs);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+function resetToWizard() {
+  if (!confirm('This will take you back to setup. Your progress will be saved.')) return;
+  document.getElementById('setup-screen').classList.remove('hidden');
+  document.getElementById('app').classList.remove('visible');
+  // pre-fill wizard fields
+  document.getElementById('wz-name').value = cfg.name;
+  document.getElementById('wz-tagline').value = cfg.tagline || '';
+  document.getElementById('wz-start').value = cfg.startDate;
+  document.getElementById('wz-end').value = cfg.endDate;
+  document.getElementById('wz-hrs').value = cfg.targetHrs;
+  wzCourses = courses.map(c => ({...c}));
+  renderWzCourseList();
+  goToStep(0);
+}
+
+// ─── DASHBOARD RENDER ────────────────────────────────────────────────────────
+function renderDashboard() {
+  const fmt = d => d ? new Date(d+'T00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  document.getElementById('hdr-name').textContent = cfg.name;
+  document.getElementById('hdr-title').textContent = cfg.name.split(' ')[0] + "'s Learning Path";
+  document.getElementById('hdr-sub').textContent = `${fmt(cfg.startDate)} – ${fmt(cfg.endDate)} · ${courses.length} Courses`;
+  document.getElementById('ss-hrs-goal').textContent = cfg.targetHrs + ' hrs';
+  document.getElementById('ss-end').textContent = fmt(cfg.endDate);
+  document.getElementById('ss-total').textContent = courses.length;
+  document.title = cfg.name.split(' ')[0] + "'s Learning Path";
+  buildFilterOptions();
+  renderKPIs();
+  renderPriorityDisplay();
+  renderTable();
+  renderWeekGrid();
+  setTimeout(renderChart, 80);
+}
+
+function buildFilterOptions() {
+  const weeks = [...new Set(courses.map(c=>c.week))].sort((a,b) => parseInt(a.split(' ')[1]||0)-parseInt(b.split(' ')[1]||0));
+  const cats = [...new Set(courses.map(c=>c.category))].sort();
+  const wEl = document.getElementById('f-week');
+  wEl.innerHTML = '<option value="">All Weeks</option>' + weeks.map(w=>`<option>${w}</option>`).join('');
+  const cEl = document.getElementById('f-cat');
+  cEl.innerHTML = '<option value="">All Categories</option>' + cats.map(c=>`<option>${c}</option>`).join('');
+}
+
+function renderKPIs() {
+  const done = courses.filter(c=>c.done);
+  const hrs = done.reduce((s,c)=>s+c.hrs,0);
+  const li = courses.filter(c=>c.linkedin).length;
+  const pct = cfg.targetHrs > 0 ? Math.round(hrs/cfg.targetHrs*100) : 0;
+  document.getElementById('hdr-pct').textContent = pct + '%';
+  document.getElementById('hdr-bar').style.width = Math.min(pct,100) + '%';
+  document.getElementById('ss-done').textContent = done.length;
+  document.getElementById('ss-earned').textContent = hrs.toFixed(1) + 'h';
+
+  const kpis = [
+    {label:'Hours Completed', value: hrs.toFixed(1), sub:`of ${cfg.targetHrs} target`, pct: Math.min(hrs/cfg.targetHrs*100,100), cls:''},
+    {label:'Courses Done', value: done.length, sub:`of ${courses.length}`, pct: courses.length>0?Math.min(done.length/courses.length*100,100):0, cls:''},
+    {label:'LinkedIn Posts', value: li, sub:'posts published', pct: courses.length>0?Math.min(li/courses.length*100,100):0, cls:'amber'},
+  ];
+
+  // priority track KPIs
+  cfg.priorities.slice(0,2).forEach((p,i) => {
+    const pdone = courses.filter(c=>c.done&&c.category===p).length;
+    const ptotal = courses.filter(c=>c.category===p).length;
+    kpis.push({label: p.length>22?p.substring(0,22)+'…':p, value:`${pdone}/${ptotal}`, sub:'priority track', pct:ptotal>0?Math.min(pdone/ptotal*100,100):0, cls: i===0?'purple':'green'});
+  });
+
+  document.getElementById('kpi-grid').innerHTML = kpis.map(k => `
+    <div class="kpi ${k.cls}">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value">${k.value}</div>
+      <div class="kpi-sub">${k.sub}</div>
+      <div class="kpi-bar"><div class="kpi-bar-fill" style="width:${k.pct.toFixed(1)}%"></div></div>
+    </div>`).join('');
+}
+
+function renderPriorityDisplay() {
+  const el = document.getElementById('priority-display');
+  if (cfg.priorities.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3)">No priority tracks selected. Use Edit Setup to add some.</div>';
+    return;
+  }
+  const pills = cfg.priorities.map((p,i) => `<span class="pill ${i%2===0?'pill-agt':'pill-gwi'}"><span class="dot ${i%2===0?'dot-p':'dot-t'}"></span>${p}</span>`).join('');
+  el.innerHTML = pills + `<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6">Priority rows are highlighted with coloured left borders in the tracker.</div>`;
+}
+
+function getCatClass(cat) {
+  if (cfg.priorities[0] && cat === cfg.priorities[0]) return 'c-ag';
+  if (cfg.priorities[1] && cat === cfg.priorities[1]) return 'c-gwi';
+  if (cat.includes('Tools') || cat.includes('Practice')) return 'c-tools';
+  return 'c-def';
+}
+
+function renderTable() {
+  const week = document.getElementById('f-week').value;
+  const cat = document.getElementById('f-cat').value;
+  const status = document.getElementById('f-status').value;
+  const search = document.getElementById('f-search').value.toLowerCase();
+  const filtered = courses.filter(c => {
+    if (week && c.week !== week) return false;
+    if (cat && c.category !== cat) return false;
+    if (status === 'done' && !c.done) return false;
+    if (status === 'todo' && c.done) return false;
+    if (search && !c.title.toLowerCase().includes(search) && !c.category.toLowerCase().includes(search) && !(c.platform||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  document.getElementById('showing-count').textContent = filtered.length + ' courses';
+  const tbody = document.getElementById('course-tbody');
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="8">No courses match your filters.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = filtered.map(c => {
+    const isPri0 = cfg.priorities[0] && c.category === cfg.priorities[0];
+    const isPri1 = cfg.priorities[1] && c.category === cfg.priorities[1];
+    const rowCls = [c.done?'completed':'', isPri0?'p-agentic':isPri1?'p-gwi':''].filter(Boolean).join(' ');
+    const catCls = getCatClass(c.category);
+    const shortCat = c.category.replace('EARNED — ','').replace('OWNED — ','').replace('PAID — ','').replace('SHARED — ','').replace(' — Hands-On Practice','');
+    return `<tr class="${rowCls}" data-num="${c.num}">
+      <td style="font-size:10px;font-weight:700;color:var(--text3)">${c.num}</td>
+      <td>
+        <div class="course-title">${c.url?`<a href="${c.url}" target="_blank">${c.title}</a>`:c.title}</div>
+        <span class="cat-badge ${catCls}">${shortCat}</span>
+        ${c.notes?`<span style="font-size:9px;color:var(--purple-600);margin-left:3px">${c.notes}</span>`:''}
+      </td>
+      <td class="hrs-cell">${c.hrs}h</td>
+      <td><input type="checkbox" ${c.done?'checked':''} onchange="toggleDone(${c.num},this.checked)"></td>
+      <td><button class="li-btn ${c.linkedin?'on':''}" onclick="toggleLI(${c.num})">${c.linkedin?'Posted':'Post'}</button></td>
+      <td><input type="date" value="${c.completedDate}" onchange="setDate(${c.num},this.value)" ${!c.done?'disabled':''}></td>
+      <td style="font-size:10px;color:var(--text3)">${c.week}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" onclick="openCourseModal(${c.num})" title="Edit">&#9998;</button>
+        <button class="btn-icon btn-del" onclick="deleteCourse(${c.num})" title="Delete">&#x1F5D1;</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderWeekGrid() {
+  const weeks = [...new Set(courses.map(c=>c.week))].sort((a,b)=>parseInt(a.split(' ')[1]||0)-parseInt(b.split(' ')[1]||0));
+  document.getElementById('wk-grid').innerHTML = weeks.map(w => {
+    const total = courses.filter(c=>c.week===w).length;
+    const done = courses.filter(c=>c.week===w&&c.done).length;
+    const cls = done===total&&total>0?'wk-cell done':done>0?'wk-cell partial':'wk-cell';
+    return `<div class="${cls}" title="${done}/${total} done"><div class="wk-num">${w.replace('Week','W')}</div><div class="wk-count">${done}/${total}</div></div>`;
+  }).join('');
+}
+
+function renderChart() {
+  const d = chartMode==='cat' ? getCatData() : getWeekData();
+  const colors = d.labels.map((l,i) => {
+    if (cfg.priorities[0] && d.rawLabels && d.rawLabels[i]===cfg.priorities[0]) return '#7F77DD';
+    if (cfg.priorities[1] && d.rawLabels && d.rawLabels[i]===cfg.priorities[1]) return '#1D9E75';
+    if (l.includes('Tools')||l.includes('Practice')) return '#EF9F27';
+    return '#9FE1CB';
+  });
+  if (chartInst) { chartInst.destroy(); chartInst=null; }
+  const ctx = document.getElementById('main-chart').getContext('2d');
+  chartInst = new Chart(ctx, {
+    type:'bar',
+    data:{labels:d.labels,datasets:[
+      {label:'Remaining',data:d.data.map((v,i)=>v-d.done[i]),backgroundColor:colors.map(c=>c+'33'),borderColor:colors,borderWidth:1.5,borderRadius:4},
+      {label:'Completed',data:d.done,backgroundColor:colors,borderRadius:4}
+    ]},
+    options:{
+      indexAxis:chartMode==='cat'?'y':'x',
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.dataset.label}: ${ctx.raw}`}}},
+      scales:{
+        x:{stacked:true,grid:{color:'#E8F5EE'},ticks:{font:{size:9},color:'#5E8070',maxRotation:chartMode==='cat'?0:30}},
+        y:{stacked:true,grid:{color:'#E8F5EE'},ticks:{font:{size:9},color:'#5E8070'}}
+      }
+    }
+  });
+}
+
+function getCatData() {
+  const cats = {}; courses.forEach(c=>{if(!cats[c.category])cats[c.category]={total:0,done:0};cats[c.category].total++;if(c.done)cats[c.category].done++;});
+  const sorted = Object.entries(cats).sort((a,b)=>b[1].total-a[1].total);
+  return {labels:sorted.map(x=>x[0].replace('EARNED — ','').replace('OWNED — ','').replace('PAID — ','').replace('SHARED — ','').replace(' — Hands-On Practice','')),rawLabels:sorted.map(x=>x[0]),data:sorted.map(x=>x[1].total),done:sorted.map(x=>x[1].done)};
+}
+function getWeekData() {
+  const weeks=[...new Set(courses.map(c=>c.week))].sort((a,b)=>parseInt(a.split(' ')[1]||0)-parseInt(b.split(' ')[1]||0));
+  return {labels:weeks.map(w=>w.replace('Week ','')),rawLabels:weeks,data:weeks.map(w=>courses.filter(c=>c.week===w).length),done:weeks.map(w=>courses.filter(c=>c.week===w&&c.done).length)};
+}
+function switchChart(mode,btn){chartMode=mode;document.querySelectorAll('.ctab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');renderChart();}
+
+// ─── COURSE ACTIONS ───────────────────────────────────────────────────────────
+function toggleDone(num, val) {
+  const c = courses.find(x=>x.num===num); c.done=val;
+  if (val&&!c.completedDate) c.completedDate=new Date().toISOString().split('T')[0];
+  if (!val){c.completedDate='';c.linkedin=false;}
+  saveState(); renderKPIs(); renderTable(); renderChart(); renderWeekGrid();
+}
+function toggleLI(num){const c=courses.find(x=>x.num===num);c.linkedin=!c.linkedin;saveState();renderKPIs();renderTable();}
+function setDate(num,val){const c=courses.find(x=>x.num===num);c.completedDate=val;saveState();}
+
+function openCourseModal(num) {
+  editingNum = num||null;
+  document.getElementById('modal-title').textContent = num ? 'Edit Course' : 'Add New Course';
+  document.getElementById('modal-save-btn').textContent = num ? 'Update Course' : 'Save Course';
+  document.getElementById('modal-err').style.display='none';
+  if (num) {
+    const c = courses.find(x=>x.num===num);
+    document.getElementById('mi-title').value=c.title;
+    document.getElementById('mi-cat').value=c.category;
+    document.getElementById('mi-week').value=c.week;
+    document.getElementById('mi-platform').value=c.platform||'';
+    document.getElementById('mi-hrs').value=c.hrs;
+    document.getElementById('mi-url').value=c.url||'';
+    document.getElementById('mi-cert').value=c.cert||'';
+  } else {
+    ['mi-title','mi-platform','mi-url','mi-cert'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('mi-cat').value='';
+    document.getElementById('mi-week').value='';
+    document.getElementById('mi-hrs').value='';
+  }
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeCourseModal(){document.getElementById('modal-bg').classList.remove('open');editingNum=null;}
+
+function saveCourse() {
+  const title=document.getElementById('mi-title').value.trim();
+  const category=document.getElementById('mi-cat').value;
+  const week=document.getElementById('mi-week').value;
+  const hrs=parseFloat(document.getElementById('mi-hrs').value);
+  const err=document.getElementById('modal-err');
+  if(!title||!category||!week||isNaN(hrs)||hrs<=0){err.style.display='block';return;}
+  err.style.display='none';
+  const platform=document.getElementById('mi-platform').value.trim();
+  const url=document.getElementById('mi-url').value.trim();
+  const cert=document.getElementById('mi-cert').value.trim();
+  if (editingNum) {
+    const c=courses.find(x=>x.num===editingNum);
+    Object.assign(c,{title,category,week,platform,hrs,url,cert});
+    showToast('Course updated ✓');
+  } else {
+    const maxNum=courses.reduce((m,x)=>Math.max(m,x.num),0);
+    courses.push({num:maxNum+1,title,category,week,platform,hrs,url,cert,notes:'★ Added',done:false,linkedin:false,completedDate:''});
+    showToast('Course added ✓');
+  }
+  closeCourseModal();
+  saveState(); buildFilterOptions(); renderKPIs(); renderTable(); renderChart(); renderWeekGrid();
+}
+
+function deleteCourse(num) {
+  if(!confirm('Remove this course?')) return;
+  courses=courses.filter(x=>x.num!==num);
+  showToast('Course removed');
+  saveState(); buildFilterOptions(); renderKPIs(); renderTable(); renderChart(); renderWeekGrid();
+}
+
+// ─── EXPORT CSV ──────────────────────────────────────────────────────────────
+function exportCSV() {
+  const done=courses.filter(c=>c.done);
+  const out=document.getElementById('export-out');
+  const txt=document.getElementById('export-txt');
+  if(done.length===0){txt.value='No completed courses yet.';out.style.display='block';return;}
+  const header='num,title,category,platform,hrs,completedDate,linkedin';
+  const rows=done.map(c=>`${c.num},"${c.title}","${c.category}","${c.platform||''}",${c.hrs},${c.completedDate||''},${c.linkedin?'Yes':'No'}`);
+  txt.value=[header,...rows].join('\n');
+  out.style.display='block';
+}
+function copyCSV(){const t=document.getElementById('export-txt');t.select();document.execCommand('copy');const btn=event.target;btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy to clipboard',1800);}
+
+// ─── DOWNLOAD PERSONALISED COPY ──────────────────────────────────────────────
+function exportPersonalisedCopy() {
+  const snap = {cfg: JSON.parse(JSON.stringify(cfg)), courses: JSON.parse(JSON.stringify(courses))};
+  const injectScript = `
+<script>
+(function(){
+  const snap = ${JSON.stringify(snap)};
+  window.__PRELOADED_SNAP__ = snap;
+})();
+<\/script>`;
+
+  const src = document.documentElement.outerHTML;
+  // inject before closing </head>
+  const injected = src.replace('</head>', injectScript + '</head>');
+  const blob = new Blob([injected], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const safeName = cfg.name.replace(/[^a-zA-Z0-9]/g,'_').toLowerCase();
+  a.download = safeName + '_learning_path.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Downloaded! Upload to GitHub Pages to share.');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────────────────────
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400);}
+
+// ─── FILTER LISTENERS ────────────────────────────────────────────────────────
+['f-week','f-cat','f-status'].forEach(id=>document.getElementById(id)?.addEventListener('change',renderTable));
+document.getElementById('f-search')?.addEventListener('input',renderTable);
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+(function init() {
+  initWizard();
+  // Check for preloaded snapshot (from exported copy)
+  if (window.__PRELOADED_SNAP__) {
+    cfg = window.__PRELOADED_SNAP__.cfg;
+    courses = window.__PRELOADED_SNAP__.courses;
+    // Merge with any localStorage changes
+    const saved = localStorage.getItem('lp_courses_'+cfg.name);
+    if (saved) courses = JSON.parse(saved);
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    renderDashboard();
+    return;
+  }
+  // Try loading from localStorage
+  if (loadState()) {
+    document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    renderDashboard();
+  }
+  // Otherwise show wizard
+})();
+</script>
+</body>
+</html>
